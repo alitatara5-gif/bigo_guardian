@@ -24,35 +24,32 @@ jobs:
 
       - name: Build FFmpeg via Android Maker
         run: |
-          # 1. Install Alat Tempur Lengkap
           sudo apt-get update
           sudo apt-get install -y build-essential nasm yasm cmake ninja-build pkg-config autoconf libtool
-
-          # 2. Persiapan Folder Proyek Maker
+          
           git clone https://github.com/Javernaut/ffmpeg-android-maker.git
           cd ffmpeg-android-maker
-
-          # 3. Export Alamat Penting (Agar tidak error Not Defined)
+          
           export ANDROID_SDK_HOME=/usr/local/lib/android/sdk
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}
-
-          # 4. Mulai Merakit (Target arm64-v8a untuk Infinix)
-          # Kita tambahkan OpenSSL agar HTTPS Bigo Gacor!
+          
+          # Kita tambahkan --enable-gpl agar x264 & x265 aktif!
           ./ffmpeg-android-maker.sh \
             --target-abis=arm64-v8a \
             --enable-openssl \
+            --enable-gpl \
             --enable-libx264 \
             --enable-libx265
 
-      - name: List Files (Cek Lokasi Hasil Rakitan)
+      - name: Intip Lokasi File
         run: |
-          echo "--- DAFTAR PASUKAN .SO YANG BERHASIL DIBUAT ---"
+          echo "--- CEK LOKASI HASIL RAKITAN ---"
           find ffmpeg-android-maker/output -name "*.so"
 
-      - name: Upload Semua Library (.so)
+      - name: Upload Pasukan Badak (.so)
         uses: actions/upload-artifact@v4
         with:
           name: pasukan-badak-bigo
-          # Menangkap semua file .so di dalam folder output
-          path: ffmpeg-android-maker/output/lib/arm64-v8a/*.so
+          # Kita ambil folder lib-nya saja secara keseluruhan
+          path: ffmpeg-android-maker/output/lib/arm64-v8a/
