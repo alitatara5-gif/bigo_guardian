@@ -24,36 +24,36 @@ jobs:
 
       - name: Build FFmpeg via Android Maker
         run: |
-          # 1. Install alat tempur lengkap
           sudo apt-get update
           sudo apt-get install -y build-essential nasm yasm cmake ninja-build pkg-config autoconf libtool
-
-          # 2. Persiapan Folder Maker
+          
           git clone https://github.com/Javernaut/ffmpeg-android-maker.git
           cd ffmpeg-android-maker
-
-          # 3. Export alamat SDK & NDK biar gak error
+          
+          # JURUS HACK 1: Hapus aturan "--disable-programs" agar file ffmpeg binary ikut dirakit
+          sed -i 's/--disable-programs//g' scripts/ffmpeg/build.sh
+          
           export ANDROID_SDK_HOME=/usr/local/lib/android/sdk
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}
-
-          # 4. Jalankan perakit dengan fitur Full Power (HTTPS + GPL)
+          
           ./ffmpeg-android-maker.sh \
             --target-abis=arm64-v8a \
             --enable-openssl \
             --enable-gpl \
             --enable-libx264 \
             --enable-libx265
+            
+          # JURUS HACK 2: Ambil file ffmpeg dari dapur belakang, taruh ke etalase output
+          mkdir -p output/bin/arm64-v8a
+          cp build/ffmpeg/arm64-v8a/output/bin/ffmpeg output/bin/arm64-v8a/
 
-      - name: Lacak Keberadaan Badak (Debug)
-        run: |
-          echo "--- DAFTAR FILE .SO YANG BERHASIL DIBUAT ---"
-          find ffmpeg-android-maker/output -name "*.so"
-
-      - name: Upload Pasukan Badak (.so)
+      - name: Upload Pasukan Badak & Kunci Kontak Lengkap
         uses: actions/upload-artifact@v4
         with:
           name: pasukan-badak-bigo
-          # KUNCINYA DI SINI: Pakai tanda bintang (*) agar semua file .so terangkut
-          path: ffmpeg-android-maker/output/lib/arm64-v8a/*.so
+          # JURUS HACK 3: Buka 2 pintu jaring sekaligus (Pintu lib dan Pintu bin)
+          path: |
+            ffmpeg-android-maker/output/lib/arm64-v8a/*.so
+            ffmpeg-android-maker/output/bin/arm64-v8a/ffmpeg
           if-no-files-found: error
