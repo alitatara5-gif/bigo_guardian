@@ -11,8 +11,18 @@ import android.net.Uri;
 
 public class MainActivity extends Activity {
     TextView txtStatus;
-    // Logika 3: Konfirmasi 7 file .so + engine
-    String[] libs = {"avutil", "swresample", "avcodec", "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"};
+    // URUTAN KRUSIAL: avutil harus paling pertama setelah c++_shared
+    String[] libs = {
+        "c++_shared", 
+        "avutil", 
+        "swresample", 
+        "avcodec", 
+        "avformat", 
+        "swscale", 
+        "avfilter", 
+        "avdevice", 
+        "bigoguardian_engine"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,33 +30,28 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         txtStatus = findViewById(R.id.txtStatus);
 
-        // Logika 1: Ijin SEMUA AKSES FILE (Wajib untuk nulis hasil rekaman)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                Intent it = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                it.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(it);
-            }
-        }
-
-        // Logika 2: Ijin NOTIFIKASI (Wajib API 33)
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
-            }
-        }
-
-        // Logika 3: Cek status file .so
-        checkEngine();
+        // Logika 1 & 2: Izin
+        requestPermissions();
         
-        // Logika 4: Tombol Rekam
+        // Logika 3: Cek Mesin
+        checkEngine();
         setupUI();
     }
 
+    private void requestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            Intent it = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            it.setData(Uri.parse("package:" + getPackageName()));
+            startActivity(it);
+        }
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+        }
+    }
+
     private void checkEngine() {
-        StringBuilder sb = new StringBuilder("=== STATUS MESIN ===\n");
+        StringBuilder sb = new StringBuilder("=== MONITOR MESIN ===\n");
         boolean allOk = true;
-        try { System.loadLibrary("c++_shared"); } catch (Throwable t) {}
 
         for (String lib : libs) {
             try {
@@ -71,7 +76,7 @@ public class MainActivity extends Activity {
                     Intent it = new Intent(this, RecorderService.class);
                     it.putExtra("url", url);
                     startService(it);
-                    Toast.makeText(this, "Mulai merekan...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Mulai Merekam...", Toast.LENGTH_SHORT).show();
                 }
             });
         }
