@@ -11,7 +11,7 @@ import android.net.Uri;
 
 public class MainActivity extends Activity {
     TextView txtStatus;
-    // Urutan sakti: c++_shared dan avutil harus di depan!
+    // Daftar 8 file + libc++_shared
     String[] libs = {
         "c++_shared", "avutil", "swresample", "avcodec", 
         "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"
@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
                 System.loadLibrary(lib);
                 sb.append("✅ ").append(lib).append("\n");
             } catch (Throwable e) {
-                sb.append("❌ ").append(lib).append(" (Missing)\n");
+                sb.append("❌ ").append(lib).append("\n");
                 ready = false;
             }
         }
@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
                     Intent it = new Intent(this, RecorderService.class);
                     it.putExtra("url", url);
                     startService(it);
-                    Toast.makeText(this, "Rekaman Berjalan...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Mencoba Rekam...", Toast.LENGTH_SHORT).show();
                 }
             });
         }
