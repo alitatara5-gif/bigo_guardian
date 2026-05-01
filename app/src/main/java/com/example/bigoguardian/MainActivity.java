@@ -29,9 +29,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        // MINTA IZIN STORAGE
+        // --- PROSES NODONG IZIN ---
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 101);
+            requestPermissions(new String[]{
+                Manifest.permission.WRITE_EXTERNAL_STORAGE, 
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            }, 101);
         }
 
         bindService(new Intent(this, RecorderService.class), connection, Context.BIND_AUTO_CREATE);
