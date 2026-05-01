@@ -1,7 +1,18 @@
+// Top-level build file
 buildscript {
-    repositories { google(); mavenCentral() }
-    dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.3.2'
+    }
 }
+
 allprojects {
-    repositories { google(); mavenCentral() }
+    // Kosongkan bagian repositories di sini untuk menghindari konflik dengan settings.gradle
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }

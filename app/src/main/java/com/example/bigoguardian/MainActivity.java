@@ -2,28 +2,24 @@ package com.example.bigoguardian;
 
 import android.app.Activity;
 import android.content.*;
-import android.net.Uri;
 import android.os.*;
-import android.provider.Settings;
 import android.widget.*;
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.util.Log;
+import android.provider.Settings;
+import android.net.Uri;
 
 public class MainActivity extends Activity {
     TextView txtStatus;
-    // Daftar ini harus sesuai dengan file .so yang kita paksa masuk tadi
     String[] libs = {"avutil", "swresample", "avcodec", "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
-        // Pastikan ID ini ada di activity_main.xml
         txtStatus = findViewById(R.id.txtStatus);
 
-        // 1. TODONG IZIN (Penting buat Android 13/14)
+        // 1. Todong Izin Notifikasi & Video
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{
@@ -33,17 +29,12 @@ public class MainActivity extends Activity {
             }
         }
 
-        // 2. AKSES SEMUA FILE (Kunci FFmpeg bisa nulis file)
+        // 2. Akses Semua File (Kunci FFmpeg)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
-                try {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                    intent.setData(Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                } catch (Exception e) {
-                    Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
-                    startActivity(intent);
-                }
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
             }
         }
 
@@ -55,15 +46,14 @@ public class MainActivity extends Activity {
         StringBuilder sb = new StringBuilder("=== MONITOR MESIN ===\n");
         boolean ready = true;
         
-        // Load c++_shared dulu sebagai pondasi
         try { System.loadLibrary("c++_shared"); } catch (Throwable t) {}
 
         for (String lib : libs) {
             try {
                 System.loadLibrary(lib);
                 sb.append("✅ ").append(lib).append("\n");
-            } catch (UnsatisfiedLinkError e) {
-                sb.append("❌ ").append(lib).append(" (Missing)\n");
+            } catch (Throwable e) {
+                sb.append("❌ ").append(lib).append("\n");
                 ready = false;
             }
         }
@@ -77,7 +67,6 @@ public class MainActivity extends Activity {
     private void setupUI() {
         EditText input = findViewById(R.id.inputUrl);
         Button btnStart = findViewById(R.id.btnStart);
-
         if (btnStart != null) {
             btnStart.setOnClickListener(v -> {
                 String url = input.getText().toString();
@@ -87,8 +76,6 @@ public class MainActivity extends Activity {
                     it.putExtra("url", url);
                     startService(it);
                     Toast.makeText(this, "Mencoba merekam...", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Link kosong, Bang!", Toast.LENGTH_SHORT).show();
                 }
             });
         }
