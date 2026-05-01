@@ -1,4 +1,4 @@
-package com.example.bigoguardian;
+package com.bigo.guardian;
 
 import android.app.Activity;
 import android.content.*;
