@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.bigoguardian'
+    namespace 'com.bigo.guardian'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.bigoguardian"
+        applicationId "com.bigo.guardian"
         minSdk 24
         targetSdk 33
         versionCode 1
@@ -20,6 +20,17 @@ android {
         }
     }
 
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+
+    packagingOptions {
+        pickFirst 'lib/arm64-v8a/*.so'
+        doNotStrip "*/arm64-v8a/*.so"
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -28,15 +39,7 @@ android {
     }
     
     externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-        }
-    }
-
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['src/main/jniLibs']
-        }
+        cmake { path "src/main/cpp/CMakeLists.txt" }
     }
 
     compileOptions {

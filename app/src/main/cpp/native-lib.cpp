@@ -15,7 +15,7 @@ std::map<int, std::atomic<long>*> durations;
 std::mutex mtx;
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_example_bigoguardian_RecorderService_startNativeRecording(JNIEnv *env, jobject thiz, jint id, jstring jurl, jstring jpath) {
+Java_com_bigo_guardian_RecorderService_startNativeRecording(JNIEnv *env, jobject thiz, jint id, jstring jurl, jstring jpath) {
     const char *url = env->GetStringUTFChars(jurl, 0);
     const char *path = env->GetStringUTFChars(jpath, 0);
     
@@ -60,13 +60,13 @@ Java_com_example_bigoguardian_RecorderService_startNativeRecording(JNIEnv *env, 
 }
 
 extern "C" JNIEXPORT jlong JNICALL
-Java_com_example_bigoguardian_RecorderService_getNativeDuration(JNIEnv *env, jobject thiz, jint id) {
+Java_com_bigo_guardian_RecorderService_getNativeDuration(JNIEnv *env, jobject thiz, jint id) {
     std::lock_guard<std::mutex> lock(mtx);
     return (durations.count(id)) ? durations[id]->load() : 0;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_example_bigoguardian_RecorderService_stopNativeRecording(JNIEnv *env, jobject thiz, jint id) {
+Java_com_bigo_guardian_RecorderService_stopNativeRecording(JNIEnv *env, jobject thiz, jint id) {
     std::lock_guard<std::mutex> lock(mtx);
     if (stop_flags.count(id)) stop_flags[id]->store(true);
 }
