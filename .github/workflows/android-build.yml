@@ -22,15 +22,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew || true
 
-      - name: Build with Gradle
+      - name: Build Debug APK
         run: |
           if [ ! -f gradlew ]; then
             gradle wrapper --gradle-version 8.2
           fi
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Bigo-Guardian-Native-Release
-          path: app/build/outputs/apk/release/*.apk
+          name: Bigo-Guardian-Native-Debug
+          path: app/build/outputs/apk/debug/*.apk
