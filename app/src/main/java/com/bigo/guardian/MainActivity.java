@@ -11,17 +11,10 @@ import android.net.Uri;
 
 public class MainActivity extends Activity {
     TextView txtStatus;
-    // URUTAN KRUSIAL: avutil harus paling pertama setelah c++_shared
+    // URUTAN SAKTI: avutil WAJIB sebelum avcodec/avformat
     String[] libs = {
-        "c++_shared", 
-        "avutil", 
-        "swresample", 
-        "avcodec", 
-        "avformat", 
-        "swscale", 
-        "avfilter", 
-        "avdevice", 
-        "bigoguardian_engine"
+        "c++_shared", "avutil", "swresample", "avcodec", 
+        "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"
     };
 
     @Override
@@ -30,15 +23,17 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         txtStatus = findViewById(R.id.txtStatus);
 
-        // Logika 1 & 2: Izin
-        requestPermissions();
+        // 1 & 2. Logika Izin
+        handlePermissions();
         
-        // Logika 3: Cek Mesin
+        // 3. Logika Konfirmasi 7 File .so
         checkEngine();
+        
+        // 4. Logika Mulai Rekaman
         setupUI();
     }
 
-    private void requestPermissions() {
+    private void handlePermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
             Intent it = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
             it.setData(Uri.parse("package:" + getPackageName()));
@@ -51,19 +46,18 @@ public class MainActivity extends Activity {
 
     private void checkEngine() {
         StringBuilder sb = new StringBuilder("=== MONITOR MESIN ===\n");
-        boolean allOk = true;
-
+        boolean ready = true;
         for (String lib : libs) {
             try {
                 System.loadLibrary(lib);
                 sb.append("✅ ").append(lib).append("\n");
             } catch (Throwable e) {
-                sb.append("❌ ").append(lib).append("\n");
-                allOk = false;
+                sb.append("❌ ").append(lib).append(" (Missing)\n");
+                ready = false;
             }
         }
         txtStatus.setText(sb.toString());
-        txtStatus.setTextColor(allOk ? 0xFF00FF00 : 0xFFFF0000);
+        txtStatus.setTextColor(ready ? 0xFF00FF00 : 0xFFFF0000);
     }
 
     private void setupUI() {
@@ -76,7 +70,7 @@ public class MainActivity extends Activity {
                     Intent it = new Intent(this, RecorderService.class);
                     it.putExtra("url", url);
                     startService(it);
-                    Toast.makeText(this, "Mulai Merekam...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Rekaman Dimulai...", Toast.LENGTH_SHORT).show();
                 }
             });
         }
