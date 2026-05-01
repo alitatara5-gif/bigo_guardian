@@ -41,14 +41,17 @@ jobs:
             --enable-libx264 \
             --enable-libx265
 
-      - name: Cek Hasil Rakitan
+      - name: Lacak Keberadaan Badak (Debug)
         run: |
-          echo "--- DAFTAR FILE .SO YANG DITEMUKAN ---"
-          find ffmpeg-android-maker/output/lib/arm64-v8a/ -name "*.so"
+          echo "--- MENCARI SEMUA FILE .SO ---"
+          find . -name "*.so"
 
-      - name: Upload Pasukan Badak (.so)
+      - name: Upload Pasukan Badak
         uses: actions/upload-artifact@v4
         with:
           name: pasukan-badak-bigo
-          # KUNCINYA DI SINI: Kita ambil SEMUA yang berakhiran .so
-          path: ffmpeg-android-maker/output/lib/arm64-v8a/*.so
+          # PAKAI CARA INI: Ambil semua folder lib arm64 biar gak ada yang ketinggalan
+          path: |
+            ffmpeg-android-maker/output/lib/arm64-v8a/*.so
+            ffmpeg-android-maker/output/lib/arm64-v8a/
+          if-no-files-found: error
