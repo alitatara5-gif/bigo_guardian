@@ -1,14 +1,12 @@
 package com.bigo.posix;
 
 import android.os.Bundle;
-import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -27,6 +25,15 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView tvStatus;
 
+    // Fungsi ini bakal dipanggil dari C++ buat ngirim pesan ke layar
+    public void updateStatusFromNative(final String message) {
+        runOnUiThread(() -> {
+            if (tvStatus != null) {
+                tvStatus.append("\n" + message);
+            }
+        });
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,59 +42,37 @@ public class MainActivity extends AppCompatActivity {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(40, 40, 40, 40);
 
-        TextView tvTitle = new TextView(this);
-        tvTitle.setText("BIGO GUARDIAN POSIX");
-        tvTitle.setTextSize(24);
-        layout.addView(tvTitle);
-
-        TextView tvInfo = new TextView(this);
-        tvInfo.setText(stringFromJNI());
-        tvInfo.setPadding(0, 0, 0, 40);
-        layout.addView(tvInfo);
+        tvStatus = new TextView(this);
+        tvStatus.setText("Engine: " + stringFromJNI() + "\n--- LOG ---");
 
         final EditText etUrl = new EditText(this);
-        etUrl.setHint("Masukkan URL Stream...");
+        etUrl.setHint("Masukkan URL m3u8...");
         layout.addView(etUrl);
 
-        final Button btnRecord = new Button(this);
-        btnRecord.setText("MULAI REKAM");
-        layout.addView(btnRecord);
+        Button btnStart = new Button(this);
+        btnStart.setText("MULAI REKAM");
+        layout.addView(btnStart);
 
-        final Button btnStop = new Button(this);
-        btnStop.setText("STOP REKAM");
-        btnStop.setEnabled(false); // Disable dulu sebelum rekam
+        Button btnStop = new Button(this);
+        btnStop.setText("STOP");
         layout.addView(btnStop);
 
-        tvStatus = new TextView(this);
-        tvStatus.setText("\nStatus: Ready...");
         ScrollView scroller = new ScrollView(this);
         scroller.addView(tvStatus);
         layout.addView(scroller);
 
         setContentView(layout);
 
-        btnRecord.setOnClickListener(v -> {
+        btnStart.setOnClickListener(v -> {
             String url = etUrl.getText().toString().trim();
-            if (url.isEmpty()) return;
-
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(new Date());
-            File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            String outputPath = new File(downloadDir, "Bigo_" + timeStamp + ".mp4").getAbsolutePath();
-
-            int result = startRecording(url, outputPath);
-            if (result == 0) {
-                tvStatus.append("\n[Mulai] Rekaman berjalan...");
-                btnRecord.setEnabled(false);
-                btnStop.setEnabled(true);
-            }
+            // Simpan ke folder internal biar PASTI berhasil (gak butuh izin storage)
+            File internalDir = getExternalFilesDir(null);
+            String path = new File(internalDir, "live_" + System.currentTimeMillis() + ".mp4").getAbsolutePath();
+            
+            updateStatusFromNative("[Info] Path: " + path);
+            startRecording(url, path);
         });
 
-        btnStop.setOnClickListener(v -> {
-            stopRecording();
-            tvStatus.append("\n[Berhenti] Menyimpan file...");
-            btnRecord.setEnabled(true);
-            btnStop.setEnabled(false);
-            Toast.makeText(this, "Rekaman Berhenti!", Toast.LENGTH_SHORT).show();
-        });
+        btnStop.setOnClickListener(v -> stopRecording());
     }
 }
