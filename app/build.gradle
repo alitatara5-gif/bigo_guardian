@@ -15,6 +15,8 @@ android {
 
         externalNativeBuild {
             cmake {
+                // INI KUNCI BUAT MASUKIN libc++_shared.so
+                arguments "-DANDROID_STL=c++_shared"
                 abiFilters "arm64-v8a"
             }
         }

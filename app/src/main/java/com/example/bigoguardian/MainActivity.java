@@ -22,7 +22,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Urutan muat yang paling aman
+        // MUAT OLI MESIN DULU, BANG!
+        loadLib("c++_shared");
+        
+        // Baru muat pasukan FFmpeg
         loadLib("avutil");
         loadLib("swresample");
         loadLib("avcodec");
@@ -39,14 +42,10 @@ public class MainActivity extends Activity {
         tv.setTextColor(Color.WHITE);
         tv.setBackgroundColor(Color.BLACK);
         
-        try {
-            if (log.toString().contains("❌")) {
-                tv.setText("💀 ADA MASALAH KONEKSI .SO:\n\n" + log.toString());
-            } else {
-                tv.setText("🚀 SEMUA OTOT SIAP!\n\n" + testOtot());
-            }
-        } catch (Exception e) {
-            tv.setText("🔥 CRASH DI JNI: " + e.getMessage());
+        if (log.toString().contains("❌")) {
+            tv.setText("💀 MASALAH DEPENDENCY:\n\n" + log.toString());
+        } else {
+            tv.setText("🚀 SEMUA OTOT SIAP!\n\n" + testOtot());
         }
 
         sv.addView(tv);
