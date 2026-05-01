@@ -3,37 +3,77 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#121212">
+    android:background="#121212"
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/txtStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mengecek Sistem..."
-        android:textColor="#00FF00"
-        android:padding="10dp"
         android:background="#1E1E1E"
-        android:layout_marginBottom="10dp"/>
+        android:padding="12dp"
+        android:textColor="#00FF00"
+        android:fontFamily="monospace"
+        android:textSize="12sp"
+        android:text="MENGECEK MESIN..." />
 
     <EditText
         android:id="@+id/inputUrl"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Link m3u8"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#00FF00"/>
+        android:layout_marginTop="16dp"
+        android:hint="Masukkan Link m3u8"
+        android:textColorHint="#666"
+        android:textColor="#FFF"
+        android:backgroundTint="#00FF00" />
 
-    <Button
-        android:id="@+id/btnStart"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="MULAI REKAM"
-        android:backgroundTint="#00FF00"
-        android:textColor="#000000"/>
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:weightSum="2">
 
-    <ListView
-        android:id="@+id/listRecordings"
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MULAI REKAM"
+            android:backgroundTint="#00C853"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnStop"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="STOP"
+            android:backgroundTint="#D50000"
+            android:layout_marginStart="4dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        android:text="DAFTAR REKAMAN"
+        android:textColor="#AAA"
+        android:layout_marginTop="20dp"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="8dp">
+        <TextView
+            android:id="@+id/listRekaman"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#00FF00"
+            android:fontFamily="monospace"
+            android:text="Belum ada aktivitas..." />
+    </ScrollView>
+
 </LinearLayout>

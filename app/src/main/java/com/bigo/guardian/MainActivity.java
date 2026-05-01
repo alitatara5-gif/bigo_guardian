@@ -3,71 +3,84 @@ package com.bigo.guardian;
 import android.app.Activity;
 import android.content.*;
 import android.os.*;
+import android.view.View;
 import android.widget.*;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.provider.Settings;
-import android.net.Uri;
 
 public class MainActivity extends Activity {
-    TextView txtStatus;
-    // Daftar 8 file + libc++_shared
-    String[] libs = {
-        "c++_shared", "avutil", "swresample", "avcodec", 
-        "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"
-    };
+    TextView txtStatus, listRekaman;
+    Button btnStart, btnStop;
+    EditText inputUrl;
+    Handler handler = new Handler();
+    
+    String[] libs = {"c++_shared", "avutil", "swresample", "avcodec", "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         txtStatus = findViewById(R.id.txtStatus);
+        listRekaman = findViewById(R.id.listRekaman);
+        btnStart = findViewById(R.id.btnStart);
+        btnStop = findViewById(R.id.btnStop);
+        inputUrl = findViewById(R.id.inputUrl);
 
-        handlePermissions();
         checkEngine();
-        setupUI();
-    }
 
-    private void handlePermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-            Intent it = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-            it.setData(Uri.parse("package:" + getPackageName()));
-            startActivity(it);
-        }
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
-        }
+        btnStart.setOnClickListener(v -> startRecording());
+        btnStop.setOnClickListener(v -> stopRecording());
+
+        // Update Durasi Real-time setiap 1 detik
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                updateDurationUI();
+                handler.postDelayed(this, 1000);
+            }
+        }, 1000);
     }
 
     private void checkEngine() {
-        StringBuilder sb = new StringBuilder("=== MONITOR MESIN ===\n");
-        boolean ready = true;
+        StringBuilder sb = new StringBuilder("=== KONFIRMASI MESIN ===\n");
         for (String lib : libs) {
             try {
                 System.loadLibrary(lib);
                 sb.append("✅ ").append(lib).append("\n");
             } catch (Throwable e) {
-                sb.append("❌ ").append(lib).append("\n");
-                ready = false;
+                sb.append("❌ ").append(lib).append(" (ERROR)\n");
             }
         }
         txtStatus.setText(sb.toString());
-        txtStatus.setTextColor(ready ? 0xFF00FF00 : 0xFFFF0000);
     }
 
-    private void setupUI() {
-        Button btnStart = findViewById(R.id.btnStart);
-        EditText input = findViewById(R.id.inputUrl);
-        if (btnStart != null) {
-            btnStart.setOnClickListener(v -> {
-                String url = input.getText().toString();
-                if (!url.isEmpty()) {
-                    Intent it = new Intent(this, RecorderService.class);
-                    it.putExtra("url", url);
-                    startService(it);
-                    Toast.makeText(this, "Mencoba Rekam...", Toast.LENGTH_SHORT).show();
-                }
-            });
+    private void startRecording() {
+        String url = inputUrl.getText().toString();
+        if (url.isEmpty()) return;
+
+        btnStart.setVisibility(View.GONE);
+        btnStop.setVisibility(View.VISIBLE);
+        
+        Intent it = new Intent(this, RecorderService.class);
+        it.putExtra("url", url);
+        startService(it);
+        
+        listRekaman.setText("⏺️ Sedang merekam stream...");
+    }
+
+    private void stopRecording() {
+        btnStop.setVisibility(View.GONE);
+        btnStart.setVisibility(View.VISIBLE);
+        
+        stopService(new Intent(this, RecorderService.class));
+        listRekaman.setText("⏹️ Rekaman dihentikan.");
+    }
+
+    private void updateDurationUI() {
+        // Logika mengambil durasi dari Service atau Engine
+        if (btnStop.getVisibility() == View.VISIBLE) {
+            long sec = (System.currentTimeMillis() - RecorderService.startTime) / 1000;
+            String time = String.format("%02d:%02d:%02d", sec/3600, (sec%3600)/60, sec%60);
+            listRekaman.setText("⏺️ LIVE: " + time + "\n📁 Menyimpan ke Download/BigoGuardian");
         }
     }
 }
