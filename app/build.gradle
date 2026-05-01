@@ -3,6 +3,7 @@ plugins {
 }
 
 android {
+    // Pindah package ke namespace (syarat Gradle terbaru)
     namespace 'com.example.bigoguardian'
     compileSdk 34
 
@@ -15,7 +16,6 @@ android {
         
         externalNativeBuild {
             cmake {
-                cppFlags ""
                 abiFilters "arm64-v8a"
             }
         }
@@ -33,7 +33,7 @@ android {
         }
     }
 
-    // INI KUNCINYA: Paksa Gradle masukin folder jniLibs
+    // Cara simpel masukin .so tanpa bikin bentrok configuration
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']
@@ -41,11 +41,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
 }
