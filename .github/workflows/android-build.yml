@@ -1,4 +1,4 @@
-name: Build APK Clean Test
+name: Build APK Native Test
 on: workflow_dispatch
 jobs:
   build:
