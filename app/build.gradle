@@ -12,16 +12,19 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
-
         externalNativeBuild {
             cmake {
-                // INI KUNCI BUAT MASUKIN libc++_shared.so
-                arguments "-DANDROID_STL=c++_shared"
-                abiFilters "arm64-v8a"
+                cppFlags "-std=c++17"
+                abiFilters 'arm64-v8a'
             }
         }
     }
 
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"

@@ -1,94 +1,70 @@
 #include <jni.h>
 #include <string>
-#include <unistd.h>
 #include <atomic>
 #include <map>
 #include <mutex>
 
 extern "C" {
 #include <libavformat/avformat.h>
-#include <libavutil/timestamp.h>
 #include <libavutil/mathematics.h>
 }
 
 std::map<int, std::atomic<bool>*> stop_flags;
-std::map<int, std::atomic<long>*> live_durations;
-std::mutex engine_mutex;
+std::map<int, std::atomic<long>*> durations;
+std::mutex mtx;
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_example_bigoguardian_RecorderService_startNativeRecording(JNIEnv *env, jobject thiz, jint id, jstring jurl, jstring jpath) {
     const char *url = env->GetStringUTFChars(jurl, 0);
     const char *path = env->GetStringUTFChars(jpath, 0);
     
-    std::atomic<bool> *stop_ptr = new std::atomic<bool>(false);
-    std::atomic<long> *dur_ptr = new std::atomic<long>(0);
-    
-    {
-        std::lock_guard<std::mutex> lock(engine_mutex);
-        stop_flags[id] = stop_ptr;
-        live_durations[id] = dur_ptr;
+    auto* s = new std::atomic<bool>(false);
+    auto* d = new std::atomic<long>(0);
+    { std::lock_guard<std::mutex> lock(mtx); stop_flags[id] = s; durations[id] = d; }
+
+    AVFormatContext *ictx = nullptr, *octx = nullptr;
+    if (avformat_open_input(&ictx, url, nullptr, nullptr) < 0) return -1;
+    avformat_find_stream_info(ictx, nullptr);
+    avformat_alloc_output_context2(&octx, nullptr, nullptr, path);
+
+    for (int i = 0; i < ictx->nb_streams; i++) {
+        AVStream *out = avformat_new_stream(octx, nullptr);
+        avcodec_parameters_copy(out->codecpar, ictx->streams[i]->codecpar);
     }
 
-    AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
+    if (!(octx->oformat->flags & AVFMT_NOFILE)) avio_open(&octx->pb, path, AVIO_FLAG_WRITE);
+    avformat_write_header(octx, nullptr);
+
     AVPacket pkt;
-    int ret, i;
-    int64_t first_pts = -1;
+    int64_t start_pts = -1;
+    while (!s->load() && av_read_frame(ictx, &pkt) >= 0) {
+        AVStream *in_s = ictx->streams[pkt.stream_index];
+        AVStream *out_s = octx->streams[pkt.stream_index];
+        if (start_pts == -1 && pkt.pts != AV_NOPTS_VALUE) start_pts = pkt.pts;
+        if (pkt.pts != AV_NOPTS_VALUE) d->store((long)((pkt.pts - start_pts) * av_q2d(in_s->time_base)));
 
-    if ((ret = avformat_open_input(&ifmt_ctx, url, NULL, NULL)) < 0) return ret;
-    if ((ret = avformat_find_stream_info(ifmt_ctx, NULL)) < 0) return ret;
-
-    avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, path);
-    if (!ofmt_ctx) return -1;
-
-    for (i = 0; i < ifmt_ctx->nb_streams; i++) {
-        AVStream *out_stream = avformat_new_stream(ofmt_ctx, NULL);
-        avcodec_parameters_copy(out_stream->codecpar, ifmt_ctx->streams[i]->codecpar);
-        out_stream->codecpar->codec_tag = 0;
-    }
-
-    if (!(ofmt_ctx->oformat->flags & AVFMT_NOFILE)) avio_open(&ofmt_ctx->pb, path, AVIO_FLAG_WRITE);
-    avformat_write_header(ofmt_ctx, NULL);
-
-    while (!stop_ptr->load()) {
-        ret = av_read_frame(ifmt_ctx, &pkt);
-        if (ret < 0) break;
-        
-        AVStream *in_stream = ifmt_ctx->streams[pkt.stream_index];
-        AVStream *out_stream = ofmt_ctx->streams[pkt.stream_index];
-
-        if (pkt.pts != AV_NOPTS_VALUE) {
-            if (first_pts == -1) first_pts = pkt.pts;
-            dur_ptr->store((long)((pkt.pts - first_pts) * av_q2d(in_stream->time_base)));
-        }
-
-        pkt.pts = av_rescale_q(pkt.pts, in_stream->time_base, out_stream->time_base);
-        pkt.dts = av_rescale_q(pkt.dts, in_stream->time_base, out_stream->time_base);
-        pkt.duration = av_rescale_q(pkt.duration, in_stream->time_base, out_stream->time_base);
-        pkt.pos = -1;
-
-        av_interleaved_write_frame(ofmt_ctx, &pkt);
+        pkt.pts = av_rescale_q(pkt.pts, in_s->time_base, out_s->time_base);
+        pkt.dts = av_rescale_q(pkt.dts, in_s->time_base, out_s->time_base);
+        av_interleaved_write_frame(octx, &pkt);
         av_packet_unref(&pkt);
     }
 
-    av_write_trailer(ofmt_ctx);
-    avformat_close_input(&ifmt_ctx);
-    if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE)) avio_closep(&ofmt_ctx->pb);
-    avformat_free_context(ofmt_ctx);
-    
-    env->ReleaseStringUTFChars(jurl, url);
-    env->ReleaseStringUTFChars(jpath, path);
+    av_write_trailer(octx);
+    avformat_close_input(&ictx);
+    if (octx && !(octx->oformat->flags & AVFMT_NOFILE)) avio_closep(&octx->pb);
+    avformat_free_context(octx);
+    env->ReleaseStringUTFChars(jurl, url); env->ReleaseStringUTFChars(jpath, path);
     return 0;
 }
 
 extern "C" JNIEXPORT jlong JNICALL
 Java_com_example_bigoguardian_RecorderService_getNativeDuration(JNIEnv *env, jobject thiz, jint id) {
-    std::lock_guard<std::mutex> lock(engine_mutex);
-    if (live_durations.count(id)) return live_durations[id]->load();
-    return 0;
+    std::lock_guard<std::mutex> lock(mtx);
+    return (durations.count(id)) ? durations[id]->load() : 0;
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_example_bigoguardian_RecorderService_stopNativeRecording(JNIEnv *env, jobject thiz, jint id) {
-    std::lock_guard<std::mutex> lock(engine_mutex);
+    std::lock_guard<std::mutex> lock(mtx);
     if (stop_flags.count(id)) stop_flags[id]->store(true);
 }
