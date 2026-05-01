@@ -1,7 +1,7 @@
 name: Build FFmpeg Sakti Bigo
 
 on:
-  workflow_dispatch: # Supaya bisa klik tombol "Run" manual di HP
+  workflow_dispatch: 
 
 jobs:
   build-ffmpeg:
@@ -16,13 +16,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Langkah tambahan: Pasang NDK yang pas
+      - name: Set up NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c # Versi stabil untuk FFmpeg
+
       - name: Build FFmpeg via Android Maker
-        # Kita pakai tool otomatis yang paling stabil untuk urusan OpenSSL
+        env:
+          # Kita kasih tahu script-nya lokasi SDK & NDK di server GitHub
+          ANDROID_SDK_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
+          # Pasang tool pendukung biar gak error tengah jalan
+          sudo apt-get update
+          sudo apt-get install -y build-essential nasm yasm cmake ninja-build pkg-config
+          
+          # Mulai ngerakit
           git clone https://github.com/Javernaut/ffmpeg-android-maker.git
           cd ffmpeg-android-maker
-          # Jalankan build khusus arm64-v8a (Untuk Infinix Hot 40i)
-          # Kita tambahkan OpenSSL (Wajib buat HTTPS)
           ./ffmpeg-android-maker.sh \
             --target-abis=arm64-v8a \
             --enable-openssl \
@@ -33,5 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libffmpeg-sakti-abang
-          # Lokasi hasil build biasanya di sini
           path: ffmpeg-android-maker/output/lib/arm64-v8a/libffmpeg.so
