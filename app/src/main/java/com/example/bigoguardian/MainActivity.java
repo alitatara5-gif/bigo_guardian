@@ -5,20 +5,30 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
+    static {
+        // Load berurutan
+        System.loadLibrary("avutil");
+        System.loadLibrary("swresample");
+        System.loadLibrary("avcodec");
+        System.loadLibrary("avformat");
+        System.loadLibrary("swscale");
+        System.loadLibrary("avfilter");
+        System.loadLibrary("avdevice");
+        System.loadLibrary("bigoguardian_engine");
+    }
+
+    public native String testOtot();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
         TextView tv = new TextView(this);
-        Recorder recorder = new Recorder();
-        
+        tv.setTextSize(25);
         try {
-            String ver = recorder.getFFmpegVersion();
-            tv.setText("🚀 FFmpeg Berhasil Dimuat!\nVersi: " + ver);
-        } catch (Exception e) {
-            tv.setText("💀 Gagal memanggil C++: " + e.getMessage());
+            tv.setText(testOtot());
+        } catch (UnsatisfiedLinkError e) {
+            tv.setText("❌ Library Gagal Dimuat: " + e.getMessage());
         }
-        
         setContentView(tv);
     }
 }
