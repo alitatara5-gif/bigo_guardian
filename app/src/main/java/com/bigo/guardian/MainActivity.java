@@ -25,7 +25,6 @@ public class MainActivity extends Activity {
         btnStop = findViewById(R.id.btnStop);
         inputUrl = findViewById(R.id.inputUrl);
 
-        // Minta Izin Notifikasi untuk Android 13+
         if (Build.VERSION.SDK_INT >= 33) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
@@ -34,10 +33,6 @@ public class MainActivity extends Activity {
 
         checkEngine();
         syncUI();
-
-        btnStart.setOnClickListener(v -> startRecording());
-        btnStop.setOnClickListener(v -> stopRecording());
-
         handler.post(durationUpdater);
     }
 
@@ -58,6 +53,7 @@ public class MainActivity extends Activity {
                 long sec = (System.currentTimeMillis() - RecorderService.startTime) / 1000;
                 String time = String.format("%02d:%02d:%02d", sec/3600, (sec%3600)/60, sec%60);
                 listRekaman.setText("⏺️ LIVE: " + time + "\n📄 File: " + RecorderService.currentFile);
+                if (btnStart.getVisibility() == View.VISIBLE) syncUI();
             }
             handler.postDelayed(this, 1000);
         }
@@ -65,7 +61,7 @@ public class MainActivity extends Activity {
 
     private void checkEngine() {
         String[] libs = {"c++_shared", "avutil", "swresample", "avcodec", "avformat", "swscale", "avfilter", "avdevice", "bigoguardian_engine"};
-        StringBuilder sb = new StringBuilder("=== MONITOR MESIN ===\n");
+        StringBuilder sb = new StringBuilder("=== KONFIRMASI MESIN ===\n");
         for (String lib : libs) {
             try { System.loadLibrary(lib); sb.append("✅ ").append(lib).append("\n"); }
             catch (Throwable e) { sb.append("❌ ").append(lib).append("\n"); }
@@ -76,10 +72,8 @@ public class MainActivity extends Activity {
     private void startRecording() {
         String url = inputUrl.getText().toString();
         if (url.isEmpty()) return;
-        
         btnStart.setVisibility(View.GONE);
         btnStop.setVisibility(View.VISIBLE);
-        
         Intent it = new Intent(this, RecorderService.class);
         it.putExtra("url", url);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
