@@ -1,53 +1,19 @@
-plugins {
-    id 'com.android.application'
-}
-
+plugins { id 'com.android.application' }
 android {
     namespace 'com.bigo.guardian'
     compileSdk 33
-
     defaultConfig {
         applicationId "com.bigo.guardian"
         minSdk 24
         targetSdk 33
         versionCode 1
         versionName "1.0"
-        
-        ndk {
-            abiFilters "arm64-v8a"
-        }
+        ndk { abiFilters "arm64-v8a" }
     }
-
-    sourceSets {
-        main {
-            // Hanya gunakan jniLibs sebagai sumber .so
-            jniLibs.srcDirs = ['src/main/jniLibs']
-            // Hapus referensi ke folder cpp/jni lama agar tidak merakit ulang mesin lama
-            jni.srcDirs = [] 
-        }
-    }
-
-    packagingOptions {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-        // Pastikan tidak ada file lama yang nyelip
-        resources {
-            excludes += '/lib/armeabi-v7a/*'
-            excludes += '/lib/x86/*'
-            excludes += '/lib/x86_64/*'
-        }
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
-    }
+    sourceSets { main { jniLibs.srcDirs = ['src/main/jniLibs']; jni.srcDirs = [] } }
+    packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
-
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
-    implementation 'androidx.core:core:1.9.0'
 }
