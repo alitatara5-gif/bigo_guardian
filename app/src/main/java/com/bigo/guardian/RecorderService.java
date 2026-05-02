@@ -16,7 +16,7 @@ public class RecorderService extends Service {
     static {
         try {
             System.loadLibrary("c++_shared");
-            System.loadLibrary("bigoguardian_engine");
+            
             Log.d(TAG, "Native libraries loaded successfully");
         } catch (Throwable e) {
             Log.e(TAG, "Native library load failed: " + e.getMessage());
